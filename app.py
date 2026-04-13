@@ -2,57 +2,65 @@ import streamlit as st
 import google.generativeai as genai
 import os
 
-# Configurazione estetica
-st.set_page_config(page_title="Assistente Turistico Italia", page_icon="🇮🇹")
-st.title("🇮🇹 Analisi Turismo Italia - Tesi")
-st.markdown("Interrogazione database ISTAT, CNR, ENIT e PST")
+# Configurazione della pagina
+st.set_page_config(page_title="Tesi Turismo 2026", page_icon="🇮🇹", layout="wide")
 
-# Configurazione API
+# 1. CONFIGURAZIONE API
 if "GOOGLE_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 else:
-    st.error("API Key mancante. Configurala nei Secrets di Streamlit.")
+    st.error("❌ API Key non trovata nei Secrets di Streamlit!")
 
-# Funzione per leggere i tuoi documenti .txt
-def carica_conoscenza():
-    testo_totale = ""
-    folder = "documenti"
-    if os.path.exists(folder):
-        for file in os.listdir(folder):
-            if file.endswith(".txt"):
-                with open(os.path.join(folder, file), "r", encoding="utf-8") as f:
-                    testo_totale += f"\n--- FONTE: {file} ---\n" + f.read()
-    return testo_totale
+# 2. CARICAMENTO DOCUMENTI
+def carica_testi():
+    testo = ""
+    # Legge tutti i file .txt caricati nella cartella principale
+    for file in os.listdir("."):
+        if file.endswith(".txt") and file != "requirements.txt":
+            try:
+                with open(file, "r", encoding="utf-8") as f:
+                    testo += f"\n--- FONTE: {file} ---\n" + f.read()
+            except Exception as e:
+                st.warning(f"Errore nel leggere {file}: {e}")
+    return testo
 
-conoscenza_bot = carica_conoscenza()
+contesto = carica_testi()
 
-# Istruzioni per il comportamento del bot
-PROMPT_SISTEMA = f"""
-Tu sei un assistente turistico avanzato creato per una tesi di laurea in Economia.
-Il tuo compito è analizzare il turismo in Italia basandoti su questi dati:
-{conoscenza_bot}
+# 3. INTERFACCIA UTENTE
+st.title("📊 Assistente AI per Tesi Economica")
+st.caption("Analisi flussi turistici basata su dati ufficiali (ISTAT, CNR, PST)")
 
-REGOLE:
-1. Cita sempre la fonte (es. 'Dati CNR indicano...').
-2. Tono accademico e professionale.
-3. Se l'informazione non è nei file, usa la tua conoscenza ma avvisa l'utente.
-"""
-
-# Interfaccia Chat
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
+# Mostra la cronologia dei messaggi
+for m in st.session_state.messages:
+    with st.chat_message(m["role"]):
+        st.markdown(m["content"])
 
-if prompt := st.chat_input("Chiedimi dei flussi turistici o di una meta..."):
+# 4. LOGICA DEL BOT
+if prompt := st.chat_input("Chiedimi un'analisi..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        model = genai.GenerativeModel('models/gemini-1.5-flash')
-        response = model.generate_content([PROMPT_SISTEMA, prompt])
-        st.markdown(response.text)
-        st.session_state.messages.append({"role": "assistant", "content": response.text})
+        # Proviamo i nomi di modello più comuni per il 2026
+        nomi_modelli = ['gemini-1.5-flash', 'models/gemini-1.5-flash', 'gemini-1.5-flash-latest']
+        
+        successo = False
+        for nome in nomi_modelli:
+            try:
+                model = genai.GenerativeModel(nome)
+                full_prompt = f"Usa questi dati per rispondere alla domanda: {contesto}\n\nDomanda: {prompt}"
+                response = model.generate_content(full_prompt)
+                
+                st.markdown(response.text)
+                st.session_state.messages.append({"role": "assistant", "content": response.text})
+                successo = True
+                break 
+            except Exception:
+                continue
+        
+        if not successo:
+            st.error("⚠️ Il modello non risponde. Controlla che la tua API Key sia corretta.")
