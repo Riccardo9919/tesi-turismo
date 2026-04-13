@@ -44,19 +44,18 @@ if prompt := st.chat_input("Chiedimi un'analisi sui flussi turistici..."):
 
     with st.chat_message("assistant"):
         try:
-            # Istruzioni per il modello
-            istruzioni = f"Sei un esperto di economia del turismo. Usa esclusivamente questi dati per rispondere: {conoscenza}. Cita sempre i file usati."
-            
-            # Nuova chiamata 2026
+            # Usiamo 2.0 flash che è il più moderno
+            # Ma aggiungiamo un limite per non "intasare" la quota
             response = client.models.generate_content(
                 model='gemini-2.0-flash',
-                contents=f"{istruzioni}\n\nDomanda: {prompt}"
+                contents=f"Usa questi dati per rispondere brevemente: {conoscenza[:15000]}\n\nDomanda: {prompt}"
             )
             
-            risposta = response.text
-            st.markdown(risposta)
-            st.session_state.messages.append({"role": "assistant", "content": risposta})
+            st.markdown(response.text)
+            st.session_state.messages.append({"role": "assistant", "content": response.text})
             
         except Exception as e:
-            st.error(f"❌ Errore di connessione a Google: {e}")
-            st.info("Verifica che la chiave API sia attiva su Google AI Studio.")
+            if "429" in str(e):
+                st.error("⚠️ Limite di messaggi raggiunto. Aspetta 60 secondi e riprova.")
+            else:
+                st.error(f"❌ Errore: {e}")
