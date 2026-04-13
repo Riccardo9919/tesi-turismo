@@ -46,7 +46,7 @@ with st.sidebar:
 
 # 5. INTERFACCIA CHAT
 st.title("🏛️ Cicerone 4.0")
-st.caption("Analisi integrata di ISTAT, CNR, PST e fonti caricat")
+st.caption("Analisi integrata delle fonti caricate")
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
