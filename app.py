@@ -27,7 +27,7 @@ def carica_testi():
 contesto = carica_testi()
 
 # 3. INTERFACCIA UTENTE
-st.title("📊 Assistente AI per Tesi Economica")
+st.title("Cicerone 4.0")
 st.caption("Analisi flussi turistici basata su dati ufficiali (ISTAT, CNR, PST)")
 
 if "messages" not in st.session_state:
