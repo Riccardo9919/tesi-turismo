@@ -52,7 +52,7 @@ if prompt := st.chat_input("Chiedimi dei flussi turistici o di una meta..."):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('models/gemini-1.5-flash')
         response = model.generate_content([PROMPT_SISTEMA, prompt])
         st.markdown(response.text)
         st.session_state.messages.append({"role": "assistant", "content": response.text})
