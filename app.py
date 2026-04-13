@@ -47,7 +47,7 @@ if prompt := st.chat_input("Chiedimi un'analisi sui flussi turistici..."):
             # Usiamo 2.0 flash che è il più moderno
             # Ma aggiungiamo un limite per non "intasare" la quota
             response = client.models.generate_content(
-               model='gemini-1.5-flash-8b',
+              model='gemini-2.0-flash',
                 contents=f"Usa questi dati per rispondere brevemente: {conoscenza[:15000]}\n\nDomanda: {prompt}"
             )
             
