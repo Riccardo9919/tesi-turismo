@@ -49,7 +49,7 @@ if prompt := st.chat_input("Chiedimi un'analisi sui flussi turistici..."):
             
             # Nuova chiamata 2026
             response = client.models.generate_content(
-                model='gemini-1.5-flash',
+                model='gemini-2.0-flash',
                 contents=f"{istruzioni}\n\nDomanda: {prompt}"
             )
             
