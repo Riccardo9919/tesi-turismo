@@ -68,7 +68,7 @@ if prompt := st.chat_input("Chiedimi un'analisi comparativa..."):
             
             # 2. ISTRUZIONI: Chiediamo esplicitamente di usare TUTTE le fonti
             istruzioni = (
-                f"Sei un assistente per una tesi magistrale. "
+                f"Sei un assistente turistico. "
                 f"Usa i dati di TUTTI i seguenti documenti: {conoscenza[:100000]}. " # Limite alzato a 100k caratteri
                 f"Se le informazioni sono presenti in più file, confrontale. "
                 f"Cita sempre il nome del file da cui prendi l'informazione."
