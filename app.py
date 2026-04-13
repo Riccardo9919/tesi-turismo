@@ -42,13 +42,17 @@ if prompt := st.chat_input("Chiedimi un'analisi sui flussi turistici..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"): st.markdown(prompt)
 
-    with st.chat_message("assistant"):
+   with st.chat_message("assistant"):
         try:
-            # Usiamo 2.0 flash che è il più moderno
-            # Ma aggiungiamo un limite per non "intasare" la quota
+            # 1. CERCA IL MODELLO MIGLIORE DISPONIBILE (Così evitiamo il 404)
+            modelli_disponibili = [m.name for m in client.models.list()]
+            # Sceglie il primo modello 'flash' che trova (di solito il 2.0 o il 1.5 stabile)
+            modello_scelto = next((m for m in modelli_disponibili if 'flash' in m), 'gemini-2.0-flash')
+            
+            # 2. CHIAMATA (Con limite di testo per evitare il 429)
             response = client.models.generate_content(
-              model='gemini-2.0-flash',
-                contents=f"Usa questi dati per rispondere brevemente: {conoscenza[:15000]}\n\nDomanda: {prompt}"
+                model=modello_scelto,
+                contents=f"Agisci come esperto tesi. Dati: {conoscenza[:10000]}\n\nDomanda: {prompt}"
             )
             
             st.markdown(response.text)
@@ -56,6 +60,6 @@ if prompt := st.chat_input("Chiedimi un'analisi sui flussi turistici..."):
             
         except Exception as e:
             if "429" in str(e):
-                st.error("⚠️ Limite di messaggi raggiunto. Aspetta 60 secondi e riprova.")
+                st.warning("⚠️ Google è un po' lento ad attivare la tua nuova chiave. Aspetta 5 minuti esatti senza scrivere nulla e poi riprova.")
             else:
                 st.error(f"❌ Errore: {e}")
