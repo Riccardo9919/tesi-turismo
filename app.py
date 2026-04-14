@@ -51,7 +51,7 @@ conoscenza, lista_doc = carica_documenti()
 
 # --- 4. INTERFACCIA LATERALE (SIDEBAR) ---
 with st.sidebar:
-    st.title("📚 Database Tesi")
+    st.title("📚 Database")
     if lista_doc:
         st.write(f"Documenti trovati: {len(lista_doc)}")
         for d in lista_doc:
@@ -62,7 +62,7 @@ with st.sidebar:
 
 # --- 5. INTERFACCIA CHAT ---
 st.title("🏛️ Cicerone 4.0")
-st.caption("Analisi turistica avanzata con incrocio dati (ISTAT, CNR, PST)")
+st.caption("Ciao! Chiedimi pure ciò che vuoi in ambito turistico italiano")
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
