@@ -63,7 +63,7 @@ database_testuale, elenco_fonti = inizializza_database()
 with st.sidebar:
     st.image("https://img.icons8.com/fluency/96/museum.png", width=80)
     st.title("Cicerone Intelligence")
-    st.subheader("Database Turistico Attivo")
+    st.subheader("Database Turistico")
     
     if elenco_fonti:
         for f in elenco_fonti:
@@ -72,14 +72,14 @@ with st.sidebar:
         st.error("Nessun file .txt rilevato.")
     
     st.divider()
-    st.info("configurato per analisi professionali multi-utente.")
+    st.info("configurato per analisi multi-utente.")
     if st.button("Pulisci la mia sessione"):
         st.session_state.messages = []
         st.rerun()
 
 # --- 5. LOGICA CHAT ---
 st.title("🏛️ Cicerone 4.0")
-st.markdown("### *Assistente specializzato del turismo italiano*")
+st.markdown("### *Assistente specializzato nel turismo italiano*")
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
