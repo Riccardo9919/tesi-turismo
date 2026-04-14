@@ -105,7 +105,7 @@ if prompt := st.chat_input("Inserisci qui la tua richiesta..."):
             for m_name in modelli:
                 try:
                     prompt_sistema = (
-                        "Sei un Assistente Turistico Specializzato. "
+                        "Sei un Assistente Turistico Specializzato in ambito italiano. "
                         "Analizza i dati provenienti dai documenti ufficiali forniti (ISTAT, CNR, PST). "
                         "Il tuo tono è professionale, tecnico, ma anche amichevole. "
                         "Regola aurea: Cita sempre la fonte specifica (es. 'Il documento CNR indica...') "
