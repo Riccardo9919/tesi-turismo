@@ -16,37 +16,45 @@ else:
     st.error("🔑 API Key non trovata nei Secrets!")
     st.stop()
 
-# 3. CARICAMENTO DOCUMENTI
+# 3. FUNZIONE CARICAMENTO (Slicing per file da 200 pagine)
 @st.cache_data
 def carica_conoscenza():
     testo_completo = ""
-    elenco_file = []
-    # Calcoliamo quanto spazio dare a ogni file (es. 30.000 caratteri a testa)
-    limite_per_file = 30000 
+    elenco_nomi_file = []
+    # Prendiamo i primi 35.000 caratteri di ogni file (circa 20-25 pagine l'uno)
+    # Questo ci permette di incrociare i dati senza far esplodere la quota di Google
+    limite_caratteri_per_file = 35000 
     
     for file in os.listdir("."):
         if file.endswith(".txt") and file != "requirements.txt":
             try:
                 with open(file, "r", encoding="utf-8") as f:
-                    # Leggiamo solo i primi 30.000 caratteri di OGNI file
-                    contenuto = f.read(limite_per_file) 
-                    testo_completo += f"\n\n--- DOCUMENTO: {file} (Estratto iniziale) ---\n{contenuto}\n"
-                    elenco_file.append(file)
+                    contenuto = f.read(limite_caratteri_per_file) 
+                    testo_completo += f"\n\n--- DOCUMENTO: {file} ---\n{contenuto}\n"
+                    elenco_nomi_file.append(file)
             except Exception as e:
-                st.sidebar.error(f"Errore su {file}: {e}")
-    return testo_completo, elenco_file
-# 4. SIDEBAR INFO
+                st.sidebar.error(f"Errore caricamento {file}: {e}")
+                
+    return testo_completo, elenco_nomi_file
+
+# ESEGUIAMO IL CARICAMENTO
+conoscenza, lista_doc = carica_conoscenza()
+
+# 4. SIDEBAR
 with st.sidebar:
-    st.title("📚 Database")
-    st.write("Documenti analizzati:")
-    for doc in lista_doc:
-        st.success(f"✅ {doc}")
+    st.title("📚 Database Tesi")
+    st.write("Documenti analizzati (Prime 25 pagine cad.):")
+    if not lista_doc:
+        st.warning("⚠️ Nessun file .txt trovato!")
+    else:
+        for doc in lista_doc:
+            st.success(f"✅ {doc}")
     st.divider()
-    st.info("Il bot incrocia i dati di tutti i file sopra elencati.")
+    st.info("Nota: Data la dimensione dei file (200 pag), il bot analizza le sezioni iniziali di ogni documento.")
 
 # 5. INTERFACCIA CHAT
 st.title("🏛️ Cicerone 4.0")
-st.caption("Ciao! Chiedimi ciò che vuoi in ambito turistico e cercherò di aiutarti")
+st.caption("Analisi integrata per documenti di grandi dimensioni")
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -55,48 +63,44 @@ for m in st.session_state.messages:
     with st.chat_message(m["role"]):
         st.markdown(m["content"])
 
-if prompt := st.chat_input("Chiedimi un'analisi comparativa..."):
+if prompt := st.chat_input("Chiedimi un'analisi comparativa tra i file..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        # --- LOGICA DI FALLBACK (GESTIONE ERRORI 503) ---
-        # Proviamo i due modelli principali: se uno è occupato, usa l'altro
-        modelli_da_provare = ['gemini-2.0-flash', 'gemini-1.5-flash']
-        risposta_completata = False
-
-        for modello_nome in modelli_da_provare:
-            try:
-                istruzioni = (
-                    f"Sei un assistente turistico esperto. "
-                    f"Usa i dati di TUTTI i seguenti documenti: {conoscenza[:60000]}. "
-                    f"Cita sempre il nome del file da cui prendi l'informazione."
-                )
-                
-                response = client.models.generate_content(
-                    model=modello_nome,
-                    contents=f"{istruzioni}\n\nDomanda dell'utente: {prompt}"
-                )
-                
-                st.markdown(response.text)
-                st.session_state.messages.append({"role": "assistant", "content": response.text})
-                risposta_completata = True
-                break # Successo! Esco dal ciclo dei modelli
-
-            except Exception as e:
-                # Se l'errore è 503 (Occupato), prova il prossimo modello
-                if "503" in str(e) or "504" in str(e):
-                    continue 
-                # Se l'errore è Quota (429), avvisa l'utente
-                elif "429" in str(e):
-                    st.warning("⚠️ Troppe richieste in un minuto. Aspetta 30 secondi e riprova.")
-                    risposta_completata = True # Fermo il ciclo
+        try:
+            # Scegliamo il modello più adatto
+            modelli_da_provare = ['gemini-2.0-flash', 'gemini-1.5-flash']
+            successo = False
+            
+            for m_name in modelli_da_provare:
+                try:
+                    istruzioni = (
+                        "Sei un assistente esperto. Usa i dati degli estratti caricati per rispondere. "
+                        "Se un dato non è nelle prime 25 pagine, dillo chiaramente. Cita i file usati."
+                    )
+                    
+                    response = client.models.generate_content(
+                        model=m_name,
+                        contents=f"{istruzioni}\n\nDATABASE:\n{conoscenza}\n\nDOMANDA:\n{prompt}"
+                    )
+                    
+                    st.markdown(response.text)
+                    st.session_state.messages.append({"role": "assistant", "content": response.text})
+                    successo = True
                     break
-                else:
-                    st.error(f"❌ Errore tecnico: {e}")
-                    risposta_completata = True
-                    break
-        
-        if not risposta_completata:
-            st.warning("⚠️ Tutti i server di Google sono momentaneamente occupati. Riprova tra 60 secondi.")
+                except Exception as e:
+                    if "503" in str(e) or "504" in str(e):
+                        continue # Prova l'altro modello se il server è occupato
+                    else:
+                        raise e
+
+            if not successo:
+                st.error("⚠️ I server di Google sono troppo carichi. Riprova tra un minuto.")
+                
+        except Exception as e:
+            if "429" in str(e):
+                st.warning("⚠️ Limite quota raggiunto. Aspetta 60 secondi.")
+            else:
+                st.error(f"❌ Errore tecnico: {e}")
