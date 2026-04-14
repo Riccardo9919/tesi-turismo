@@ -69,7 +69,7 @@ if prompt := st.chat_input("Chiedimi un'analisi comparativa..."):
             try:
                 istruzioni = (
                     f"Sei un assistente turistico esperto. "
-                    f"Usa i dati di TUTTI i seguenti documenti: {conoscenza[:100000]}. "
+                    f"Usa i dati di TUTTI i seguenti documenti: {conoscenza[:60000]}. "
                     f"Cita sempre il nome del file da cui prendi l'informazione."
                 )
                 
