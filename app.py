@@ -3,117 +3,96 @@ from google import genai
 import os
 
 # --- 1. CONFIGURAZIONE PAGINA ---
-st.set_page_config(page_title="Cicerone 4.0 - Consulente Turistico", page_icon="🏛️", layout="wide")
+st.set_page_config(page_title="Cicerone 4.0", page_icon="🏛️", layout="wide")
 
-# --- 2. INIZIALIZZAZIONE API ---
+# --- 2. INIZIALIZZAZIONE CLIENT ---
 if "GOOGLE_API_KEY" in st.secrets:
     try:
         client = genai.Client(api_key=st.secrets["GOOGLE_API_KEY"])
     except Exception as e:
-        st.error(f"Errore tecnico nell'inizializzazione: {e}")
+        st.error(f"Errore inizializzazione: {e}")
         st.stop()
 else:
-    st.error("🔑 API Key mancante! Inseriscila nei Secrets di Streamlit.")
+    st.error("🔑 API Key non trovata!")
     st.stop()
 
-# --- 3. CARICAMENTO DATI (Ottimizzato per 200 pagine) ---
+# --- 3. CARICAMENTO DOCUMENTI (Taglio a 8000 per sicurezza quota) ---
 @st.cache_data
-def carica_database_turistico():
-    conoscenza_totale = ""
-    file_rilevati = []
-    
-    # Dato che i file sono enormi, leggiamo le sezioni principali di ognuno.
-    # 10.000 caratteri permettono di leggere circa 6-8 pagine dense di dati.
-    # Questo garantisce che l'IA possa incrociare tutti i file senza bloccare la quota.
-    CARATTERI_PER_FILE = 10000 
+def carica_database():
+    testo_completo = ""
+    elenco_file = []
+    LIMITE = 8000 
     
     documenti = [f for f in os.listdir(".") if f.endswith(".txt") and f != "requirements.txt"]
-    
-    if not documenti:
-        return None, []
-
     for nome in documenti:
         try:
             with open(nome, "r", encoding="utf-8") as f:
-                estratto = f.read(CARATTERI_PER_FILE)
-                # Compressione del testo per risparmiare spazio (token)
-                estratto = " ".join(estratto.split())
-                
-                conoscenza_totale += f"\n\n--- FONTE: {nome} ---\n{estratto}\n"
-                file_rilevati.append(nome)
-        except Exception:
-            pass
-            
-    return conoscenza_totale, file_rilevati
+                estratto = " ".join(f.read(LIMITE).split())
+                testo_completo += f"\n\n--- FONTE: {nome} ---\n{estratto}\n"
+                elenco_file.append(nome)
+        except: pass
+    return testo_completo, elenco_file
 
-conoscenza, lista_file = carica_database_turistico()
+conoscenza, lista_file = carica_database()
 
 # --- 4. SIDEBAR ---
 with st.sidebar:
     st.title("📂 Fonti Analizzate")
-    if lista_file:
-        st.write(f"Database composto da {len(lista_file)} documenti:")
-        for f in lista_file:
-            st.success(f"📌 {f}")
-        st.info("Configurazione: Analisi multicontesto attiva.")
-    else:
-        st.warning("Nessun database (.txt) trovato.")
-    
-    if st.button("Reset Conversazione"):
+    for f in lista_file: st.success(f"📌 {f}")
+    if st.button("Reset Chat"):
         st.session_state.messages = []
         st.rerun()
 
-# --- 5. INTERFACCIA PRINCIPALE ---
+# --- 5. INTERFACCIA CHAT ---
 st.title("🏛️ Cicerone 4.0")
 st.subheader("Assistente Specializzato in Analisi del Turismo Italiano")
-st.caption("Ciao! Chiedimi pure ciò che vuoi")
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
 for m in st.session_state.messages:
-    with st.chat_message(m["role"]):
-        st.markdown(m["content"])
+    with st.chat_message(m["role"]): st.markdown(m["content"])
 
 # --- 6. LOGICA DI RISPOSTA ---
-if prompt := st.chat_input("Inserisci qui la tua richiesta di analisi..."):
+if prompt := st.chat_input("Chiedimi un'analisi..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
+    with st.chat_message("user"): st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        # Modelli da provare in ordine di stabilità per il piano gratuito
-        modelli = ['gemini-1.5-flash', 'gemini-1.5-flash-8b', 'gemini-2.0-flash']
+        # STRATEGIA 2026: Proviamo i modelli stabili e quelli con i nuovi nomi
+        # Invertiamo l'ordine: prima i modelli 2.0 che sono i più probabili
+        modelli_da_provare = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b']
         successo = False
 
-        for m_name in modelli:
+        for m_name in modelli_da_provare:
             try:
-                # PERSONA: Assistente Turistico Specializzato
-                prompt_sistema = (
-                    "Agisci come un Assistente Turistico Specializzato esperto in analisi dei dati e strategie di settore. "
-                    "Il tuo compito è analizzare i flussi e le tendenze basandoti esclusivamente sui documenti forniti. "
-                    "Fornisci risposte professionali, precise e orientate al business o alla consulenza. "
-                    "Cita sempre le fonti (es. 'In base ai dati ISTAT...') e se i dati sono presenti in più file, confrontali. "
-                    "Se l'informazione non è presente negli estratti, offri una stima basata sul contesto o suggerisci un approfondimento."
+                istruzioni = (
+                    "Agisci come un Assistente Turistico Specializzato. "
+                    "Usa i dati forniti e cita sempre la fonte. "
+                    "Sii professionale e analitico."
                 )
+                
+                # Rimuoviamo eventuali prefissi 'models/' se presenti per evitare il 404
+                model_id = m_name.replace("models/", "")
                 
                 response = client.models.generate_content(
-                    model=m_name,
-                    contents=f"{prompt_sistema}\n\nDATABASE DOCUMENTALE:\n{conoscenza}\n\nRICHIESTA UTENTE:\n{prompt}"
+                    model=model_id,
+                    contents=f"{istruzioni}\n\nDATABASE:\n{conoscenza}\n\nDOMANDA:\n{prompt}"
                 )
                 
-                risposta = response.text
-                st.markdown(risposta)
-                st.session_state.messages.append({"role": "assistant", "content": risposta})
+                st.markdown(response.text)
+                st.session_state.messages.append({"role": "assistant", "content": response.text})
                 successo = True
                 break 
 
             except Exception as e:
-                msg_errore = str(e)
-                if "503" in msg_errore or "504" in msg_errore:
-                    continue # Prova il prossimo modello se il server è sovraccarico
-                elif "429" in msg_errore:
-                    st.warning("⚠️ Troppe richieste. Per favore, attendi un momento prima della prossima domanda.")
+                errore_str = str(e)
+                # Se il modello non esiste (404), passa al prossimo nella lista
+                if "404" in errore_str:
+                    continue
+                # Se è un problema di troppo traffico (429/503), avvisa l'utente
+                elif "429" in errore_str or "503" in errore_str:
+                    st.warning("⚠️ I server di Google sono carichi. Attendi 30 secondi.")
                     successo = True
                     break
                 else:
@@ -122,4 +101,4 @@ if prompt := st.chat_input("Inserisci qui la tua richiesta di analisi..."):
                     break
 
         if not successo:
-            st.error("I server di analisi sono momentaneamente occupati. Riprova tra 60 secondi.")
+            st.error("Nessun modello compatibile trovato. Controlla la tua console Google Cloud.")
