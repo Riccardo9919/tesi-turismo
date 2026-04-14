@@ -21,19 +21,20 @@ else:
 def carica_conoscenza():
     testo_completo = ""
     elenco_file = []
+    # Calcoliamo quanto spazio dare a ogni file (es. 30.000 caratteri a testa)
+    limite_per_file = 30000 
+    
     for file in os.listdir("."):
         if file.endswith(".txt") and file != "requirements.txt":
             try:
                 with open(file, "r", encoding="utf-8") as f:
-                    contenuto = f.read()
-                    testo_completo += f"\n\n--- DOCUMENTO: {file} ---\n{contenuto}\n"
+                    # Leggiamo solo i primi 30.000 caratteri di OGNI file
+                    contenuto = f.read(limite_per_file) 
+                    testo_completo += f"\n\n--- DOCUMENTO: {file} (Estratto iniziale) ---\n{contenuto}\n"
                     elenco_file.append(file)
             except Exception as e:
-                st.sidebar.error(f"Errore caricamento {file}: {e}")
+                st.sidebar.error(f"Errore su {file}: {e}")
     return testo_completo, elenco_file
-
-conoscenza, lista_doc = carica_conoscenza()
-
 # 4. SIDEBAR INFO
 with st.sidebar:
     st.title("📚 Database")
