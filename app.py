@@ -24,7 +24,7 @@ def carica_documenti():
     
     # Limite di caratteri per ogni file (circa 10-15 pagine l'uno)
     # Questo permette di incrociare i dati senza far scattare il blocco quota (429)
-    LIMITE_PER_FILE = 15000 
+    LIMITE_PER_FILE = 2000 
     
     files = [f for f in os.listdir(".") if f.endswith(".txt") and f != "requirements.txt"]
     
