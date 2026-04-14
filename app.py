@@ -13,10 +13,10 @@ if "GOOGLE_API_KEY" in st.secrets:
         st.error(f"Errore inizializzazione: {e}")
         st.stop()
 else:
-    st.error("🔑 API Key non trovata!")
+    st.error("🔑 API Key non trovata nei Secrets!")
     st.stop()
 
-# 3. CARICAMENTO DOCUMENTI (Con indicatore di quali file legge)
+# 3. CARICAMENTO DOCUMENTI
 @st.cache_data
 def carica_conoscenza():
     testo_completo = ""
@@ -26,7 +26,6 @@ def carica_conoscenza():
             try:
                 with open(file, "r", encoding="utf-8") as f:
                     contenuto = f.read()
-                    # Aggiungiamo dei marcatori chiari per separare i file
                     testo_completo += f"\n\n--- DOCUMENTO: {file} ---\n{contenuto}\n"
                     elenco_file.append(file)
             except Exception as e:
@@ -61,29 +60,42 @@ if prompt := st.chat_input("Chiedimi un'analisi comparativa..."):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        try:
-            # 1. Cerchiamo il modello (Flash è ideale per molti documenti)
-            modelli = [m.name for m in client.models.list()]
-            modello_scelto = next((m for m in modelli if 'flash' in m), 'gemini-2.0-flash')
-            
-            # 2. ISTRUZIONI: Chiediamo esplicitamente di usare TUTTE le fonti
-            istruzioni = (
-                f"Sei un assistente turistico. "
-                f"Usa i dati di TUTTI i seguenti documenti: {conoscenza[:100000]}. " # Limite alzato a 100k caratteri
-                f"Se le informazioni sono presenti in più file, confrontale. "
-                f"Cita sempre il nome del file da cui prendi l'informazione."
-            )
-            
-            response = client.models.generate_content(
-                model=modello_scelto,
-                contents=f"{istruzioni}\n\nDomanda dell'utente: {prompt}"
-            )
-            
-            st.markdown(response.text)
-            st.session_state.messages.append({"role": "assistant", "content": response.text})
-            
-        except Exception as e:
-            if "429" in str(e):
-                st.warning("⚠️ Troppe richieste. Aspetta 30 secondi.")
-            else:
-                st.error(f"❌ Errore: {e}")
+        # --- LOGICA DI FALLBACK (GESTIONE ERRORI 503) ---
+        # Proviamo i due modelli principali: se uno è occupato, usa l'altro
+        modelli_da_provare = ['gemini-2.0-flash', 'gemini-1.5-flash']
+        risposta_completata = False
+
+        for modello_nome in modelli_da_provare:
+            try:
+                istruzioni = (
+                    f"Sei un assistente turistico esperto. "
+                    f"Usa i dati di TUTTI i seguenti documenti: {conoscenza[:100000]}. "
+                    f"Cita sempre il nome del file da cui prendi l'informazione."
+                )
+                
+                response = client.models.generate_content(
+                    model=modello_nome,
+                    contents=f"{istruzioni}\n\nDomanda dell'utente: {prompt}"
+                )
+                
+                st.markdown(response.text)
+                st.session_state.messages.append({"role": "assistant", "content": response.text})
+                risposta_completata = True
+                break # Successo! Esco dal ciclo dei modelli
+
+            except Exception as e:
+                # Se l'errore è 503 (Occupato), prova il prossimo modello
+                if "503" in str(e) or "504" in str(e):
+                    continue 
+                # Se l'errore è Quota (429), avvisa l'utente
+                elif "429" in str(e):
+                    st.warning("⚠️ Troppe richieste in un minuto. Aspetta 30 secondi e riprova.")
+                    risposta_completata = True # Fermo il ciclo
+                    break
+                else:
+                    st.error(f"❌ Errore tecnico: {e}")
+                    risposta_completata = True
+                    break
+        
+        if not risposta_completata:
+            st.warning("⚠️ Tutti i server di Google sono momentaneamente occupati. Riprova tra 60 secondi.")
