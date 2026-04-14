@@ -72,14 +72,14 @@ with st.sidebar:
         st.error("Nessun file .txt rilevato.")
     
     st.divider()
-    st.info("Questa console è configurata per analisi professionali multi-utente.")
-    if st.button("Pulisci mia sessione"):
+    st.info("configurato per analisi professionali multi-utente.")
+    if st.button("Pulisci la mia sessione"):
         st.session_state.messages = []
         st.rerun()
 
 # --- 5. LOGICA CHAT ---
 st.title("🏛️ Cicerone 4.0")
-st.markdown("### *Consulente Specializzato in Analisi e Strategia del Turismo*")
+st.markdown("### *Assistente specializzato del turismo italiano*")
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
