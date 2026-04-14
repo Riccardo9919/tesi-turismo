@@ -74,7 +74,7 @@ with st.sidebar:
         st.error("Nessun file .txt rilevato.")
     
     st.divider()
-    st.info("Sistema configurato per analisi multi-utente con priorità Pay-as-you-go.")
+    st.info("Sistema configurato per analisi multi-utente.")
 
 # --- 5. VISUALIZZAZIONE CHAT ---
 st.title("🏛️ Cicerone 4.0")
