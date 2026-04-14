@@ -90,7 +90,7 @@ for m in st.session_state.messages:
         st.markdown(m["content"])
 
 # --- 6. ELABORAZIONE RICHIESTE (SISTEMA MULTI-MODELLO) ---
-if prompt := st.chat_input("Inserisci qui la tua richiesta di analisi professionale..."):
+if prompt := st.chat_input("Inserisci qui la tua richiesta..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
@@ -105,9 +105,9 @@ if prompt := st.chat_input("Inserisci qui la tua richiesta di analisi profession
             for m_name in modelli:
                 try:
                     prompt_sistema = (
-                        "Sei un Assistente Turistico Specializzato di alto livello. "
+                        "Sei un Assistente Turistico Specializzato. "
                         "Analizza i dati provenienti dai documenti ufficiali forniti (ISTAT, CNR, PST). "
-                        "Il tuo tono è professionale, tecnico e orientato alla consulenza strategica. "
+                        "Il tuo tono è professionale, tecnico, ma anche amichevole. "
                         "Regola aurea: Cita sempre la fonte specifica (es. 'Il documento CNR indica...') "
                         "e confronta i dati tra i diversi file per evidenziare trend o discrepanze. "
                         "Fornisci risposte strutturate, se utile usa elenchi puntati."
