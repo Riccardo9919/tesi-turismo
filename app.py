@@ -37,7 +37,7 @@ conoscenza, lista_doc = carica_conoscenza()
 
 # 4. SIDEBAR INFO
 with st.sidebar:
-    st.title("📚 Database Tesi")
+    st.title("📚 Database")
     st.write("Documenti analizzati:")
     for doc in lista_doc:
         st.success(f"✅ {doc}")
@@ -46,7 +46,7 @@ with st.sidebar:
 
 # 5. INTERFACCIA CHAT
 st.title("🏛️ Cicerone 4.0")
-st.caption("Analisi integrata delle fonti caricate")
+st.caption("Ciao! Chiedimi ciò che vuoi in ambito turistico e cercherò di aiutarti")
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
