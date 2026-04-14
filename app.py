@@ -23,7 +23,7 @@ def carica_conoscenza():
     elenco_nomi_file = []
     # Prendiamo i primi 35.000 caratteri di ogni file (circa 20-25 pagine l'uno)
     # Questo ci permette di incrociare i dati senza far esplodere la quota di Google
-    limite_caratteri_per_file = 35000 
+    limite_caratteri_per_file = 15000 
     
     for file in os.listdir("."):
         if file.endswith(".txt") and file != "requirements.txt":
