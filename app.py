@@ -4,7 +4,7 @@ import os
 
 # --- 1. CONFIGURAZIONE PROFESSIONALE ---
 st.set_page_config(
-    page_title="Cicerone 4.0 - Suite Professionale", 
+    page_title="Cicerone 4.0", 
     page_icon="🏛️", 
     layout="wide",
     initial_sidebar_state="expanded"
