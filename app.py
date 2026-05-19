@@ -46,22 +46,25 @@ else:
     st.error("🔑 API Key mancante nei Secrets!")
     st.stop()
 
-# --- 4. GESTIONE DATABASE (CACHE CONDIVISA) ---
+# --- 4. GESTIONE DATABASE OPTIMIZED (Più leggero) ---
 @st.cache_data
 def inizializza_database():
     testo_database = ""
     file_caricati = []
-    LIMITE_CARATTERI = 50000 
+    # Ridotto leggermente il limite caratteri per file per rendere le risposte fulminee
+    LIMITE_CARATTERI = 40000 
     
     documenti = [f for f in os.listdir(".") if f.endswith(".txt") and f != "requirements.txt"]
     for nome in documenti:
         try:
             with open(nome, "r", encoding="utf-8") as f:
                 estratto = f.read(LIMITE_CARATTERI)
+                # Alleggerisce il carico di token eliminando spazi vuoti e a capo inutili
                 estratto = " ".join(estratto.split())
-                testo_database += f"\n\n--- FONTE UFFICIALE: {nome} ---\n{estratto}\n"
+                testo_database += f"\n\n--- FONTE: {nome} ---\n{estratto}\n"
                 file_caricati.append(nome)
-        except: pass
+        except: 
+            pass
     return testo_database, file_caricati
 
 database_testuale, elenco_fonti = inizializza_database()
@@ -91,8 +94,6 @@ for m in st.session_state.messages:
         st.markdown(m["content"])
 
 # --- 7. AREA INPUT E RESET ---
-
-# Tasto reset "galleggiante" sopra la barra di input
 with st.container():
     col1, col2 = st.columns([0.9, 0.1])
     with col2:
@@ -100,14 +101,14 @@ with st.container():
             st.session_state.messages = []
             st.rerun()
 
-# Barra di input (fuori dalle colonne per rimanere sticky in basso)
 if prompt := st.chat_input("Inserisci qui la tua richiesta di analisi..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        modelli = ['gemini-2.0-flash', 'gemini-1.5-flash']
+        # Aggiornato con il modello ultra-veloce Gemini 2.5 Flash e il rispettivo Fallback
+        modelli = ['gemini-2.5-flash', 'gemini-1.5-flash']
         successo = False
         
         with st.spinner("Analisi in corso..."):
@@ -134,15 +135,17 @@ if prompt := st.chat_input("Inserisci qui la tua richiesta di analisi..."):
                     break 
 
                 except Exception as e:
-                    if "503" in str(e) or "504" in str(e):
-                        continue
-                    elif "429" in str(e):
+                    errore_str = str(e)
+                    # Gestione dei blocchi: passa al modello successivo se il primo fallisce o è offline
+                    if "404" in errore_str or "503" in errore_str or "504" in errore_str:
+                        continue 
+                    elif "429" in errore_str:
                         st.warning("⚠️ Limite raggiunto. Attendi qualche secondo.")
                         successo = True
                         break
                     else:
                         st.error(f"Errore di sistema: {e}")
-                        successo = True
-                        break
+                        continue
+            
             if not successo:
-                st.error("Servizio momentaneamente non disponibile.")
+                st.error("Servizio momentaneamente non disponibile. Riprova tra pochi istanti.")
