@@ -135,10 +135,9 @@ if prompt := st.chat_input("Inserisci qui la tua richiesta di analisi..."):
                     break 
 
                 except Exception as e:
-                    errore_str = str(e)
-                    # Gestione dei blocchi: passa al modello successivo se il primo fallisce o è offline
-                    if "404" in errore_str or "503" in errore_str or "504" in errore_str:
-                        continue 
+                    # Stampiamo l'errore nudo e crudo di Google a schermo
+                    st.error(f"Il server di Google ha bloccato {m_name} per questo motivo: {str(e)}")
+                    continue
                     elif "429" in errore_str:
                         st.warning("⚠️ Limite raggiunto. Attendi qualche secondo.")
                         successo = True
