@@ -13,24 +13,18 @@ st.set_page_config(
 # --- 2. CSS PERSONALIZZATO (Barra fissa e Reset) ---
 st.markdown("""
     <style>
-    /* Forza la barra di input a rimanere in fondo */
     .stChatInputContainer {
         position: fixed;
         bottom: 30px;
         z-index: 1000;
     }
-    
-    /* Crea un'area per il tasto reset galleggiante in basso a destra */
     .floating-reset {
         position: fixed;
         bottom: 95px;
         right: 50px;
         z-index: 1001;
     }
-
     .stChatMessage { border-radius: 15px; margin-bottom: 10px; }
-    
-    /* Nasconde il footer di default per pulizia */
     footer {visibility: hidden;}
     </style>
     """, unsafe_allow_html=True)
@@ -46,12 +40,11 @@ else:
     st.error("🔑 API Key mancante nei Secrets!")
     st.stop()
 
-# --- 4. GESTIONE DATABASE OPTIMIZED (Più leggero) ---
+# --- 4. GESTIONE DATABASE OPTIMIZED ---
 @st.cache_data
 def inizializza_database():
     testo_database = ""
     file_caricati = []
-    # Limite ottimizzato per garantire risposte fulminee ed evitare timeout di rete
     LIMITE_CARATTERI = 5000 
     
     documenti = [f for f in os.listdir(".") if f.endswith(".txt") and f != "requirements.txt"]
@@ -59,7 +52,6 @@ def inizializza_database():
         try:
             with open(nome, "r", encoding="utf-8") as f:
                 estratto = f.read(LIMITE_CARATTERI)
-                # Alleggerisce il carico di token eliminando spazi vuoti e a capo inutili
                 estratto = " ".join(estratto.split())
                 testo_database += f"\n\n--- FONTE: {nome} ---\n{estratto}\n"
                 file_caricati.append(nome)
@@ -88,7 +80,6 @@ st.markdown("### *Assistente specializzato nel turismo italiano*")
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Container per i messaggi
 for m in st.session_state.messages:
     with st.chat_message(m["role"]):
         st.markdown(m["content"])
@@ -107,7 +98,6 @@ if prompt := st.chat_input("Inserisci qui la tua richiesta di analisi..."):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        # Nomi dei modelli aggiornati con le versioni ufficiali Google
         modelli = ['gemini-2.0-flash', 'gemini-1.5-flash-latest']
         successo = False
         
@@ -135,16 +125,9 @@ if prompt := st.chat_input("Inserisci qui la tua richiesta di analisi..."):
                     break 
 
                 except Exception as e:
-                    errore_str = str(e)
-                    # Gestione dei blocchi invisibile: passa al modello successivo se il primo fallisce
-                    if "404" in errore_str or "503" in errore_str or "504" in errore_str:
-                        continue 
-                    elif "429" in errore_str:
-                        st.warning("⚠️ Limite di utilizzo raggiunto. Attendi qualche istante.")
-                        successo = True
-                        break
-                    else:
-                        continue
+                    # Abbiamo tolto i filtri. Ora ci stamperà il VERO motivo del blocco per entrambi i modelli.
+                    st.error(f"Errore tecnico con il modello {m_name}: {str(e)}")
+                    continue
             
             if not successo:
-                st.error("Servizio momentaneamente non disponibile. Riprova tra pochi istanti.")
+                st.error("I server di Google hanno rifiutato la connessione. Leggi gli errori qui sopra.")
