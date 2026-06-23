@@ -52,7 +52,7 @@ def inizializza_database():
     testo_database = ""
     file_caricati = []
     # Ridotto leggermente il limite caratteri per file per rendere le risposte fulminee
-    LIMITE_CARATTERI = 40000 
+    LIMITE_CARATTERI = 5000 
     
     documenti = [f for f in os.listdir(".") if f.endswith(".txt") and f != "requirements.txt"]
     for nome in documenti:
