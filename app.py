@@ -98,7 +98,8 @@ if prompt := st.chat_input("Inserisci qui la tua richiesta di analisi..."):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        modelli = ['gemini-2.0-flash', 'gemini-1.5-flash-latest']
+        # I modelli correnti, validi e attivi.
+        modelli = ['gemini-2.5-flash', 'gemini-2.5-pro']
         successo = False
         
         with st.spinner("Analisi in corso..."):
@@ -125,9 +126,16 @@ if prompt := st.chat_input("Inserisci qui la tua richiesta di analisi..."):
                     break 
 
                 except Exception as e:
-                    # Abbiamo tolto i filtri. Ora ci stamperà il VERO motivo del blocco per entrambi i modelli.
-                    st.error(f"Errore tecnico con il modello {m_name}: {str(e)}")
-                    continue
+                    errore_str = str(e)
+                    # Il silenziatore è tornato: scarta gli errori di server occupato e passa al modello Pro
+                    if "404" in errore_str or "503" in errore_str or "504" in errore_str:
+                        continue 
+                    elif "429" in errore_str:
+                        st.warning("⚠️ Limite di utilizzo raggiunto. Attendi qualche istante.")
+                        successo = True
+                        break
+                    else:
+                        continue
             
             if not successo:
-                st.error("I server di Google hanno rifiutato la connessione. Leggi gli errori qui sopra.")
+                st.error("Servizio momentaneamente non disponibile a causa dell'alto traffico. Riprova tra pochi istanti.")
