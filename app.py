@@ -1,3 +1,4 @@
+Python
 import streamlit as st
 from google import genai
 import os
@@ -107,8 +108,8 @@ if prompt := st.chat_input("Inserisci qui la tua richiesta di analisi..."):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        # Nomi dei modelli aggiornati con le versioni ufficiali Google
-        modelli = ['gemini-2.0-flash', 'gemini-1.5-flash']
+        # Nomi dei modelli da verificare
+        modelli = ['gemini-2.0-flash', 'gemini-1.5-flash-latest']
         successo = False
         
         with st.spinner("Analisi in corso..."):
@@ -135,16 +136,9 @@ if prompt := st.chat_input("Inserisci qui la tua richiesta di analisi..."):
                     break 
 
                 except Exception as e:
-                    errore_str = str(e)
-                    # Gestione dei blocchi invisibile: passa al modello successivo se il primo fallisce
-                    if "404" in errore_str or "503" in errore_str or "504" in errore_str:
-                        continue 
-                    elif "429" in errore_str:
-                        st.warning("⚠️ Limite di utilizzo raggiunto. Attendi qualche istante.")
-                        successo = True
-                        break
-                    else:
-                        continue
+                    # MODIFICA INVESTIGATIVA ATTIVA: Stampa l'errore esatto a schermo
+                    st.error(f"Blocco su {m_name}: {str(e)}")
+                    continue
             
             if not successo:
                 st.error("Servizio momentaneamente non disponibile. Riprova tra pochi istanti.")
