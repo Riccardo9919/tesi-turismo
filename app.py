@@ -51,8 +51,8 @@ else:
 def inizializza_database():
     testo_database = ""
     file_caricati = []
-    # Ridotto leggermente il limite caratteri per file per rendere le risposte fulminee
-    LIMITE_CARATTERI = 40000 
+    # Ho lasciato 5000 per i test, così siamo sicuri che non sia un problema di peso
+    LIMITE_CARATTERI = 5000 
     
     documenti = [f for f in os.listdir(".") if f.endswith(".txt") and f != "requirements.txt"]
     for nome in documenti:
@@ -107,7 +107,6 @@ if prompt := st.chat_input("Inserisci qui la tua richiesta di analisi..."):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        # Aggiornato con il modello ultra-veloce Gemini 2.5 Flash e il rispettivo Fallback
         modelli = ['gemini-2.5-flash', 'gemini-1.5-flash']
         successo = False
         
@@ -133,17 +132,11 @@ if prompt := st.chat_input("Inserisci qui la tua richiesta di analisi..."):
                     st.session_state.messages.append({"role": "assistant", "content": risposta_finale})
                     successo = True
                     break 
-except Exception as e:
-                    # Stampiamo l'errore nudo e crudo di Google a schermo
+
+                except Exception as e:
+                    # Stampiamo l'errore nudo e crudo di Google a schermo per capire il blocco
                     st.error(f"Il server di Google ha bloccato {m_name} per questo motivo: {str(e)}")
                     continue
-                    elif "429" in errore_str:
-                        st.warning("⚠️ Limite raggiunto. Attendi qualche secondo.")
-                        successo = True
-                        break
-                    else:
-                        st.error(f"Errore di sistema: {e}")
-                        continue
             
             if not successo:
                 st.error("Servizio momentaneamente non disponibile. Riprova tra pochi istanti.")
