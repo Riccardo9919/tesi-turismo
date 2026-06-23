@@ -133,8 +133,7 @@ if prompt := st.chat_input("Inserisci qui la tua richiesta di analisi..."):
                     st.session_state.messages.append({"role": "assistant", "content": risposta_finale})
                     successo = True
                     break 
-
-                except Exception as e:
+except Exception as e:
                     # Stampiamo l'errore nudo e crudo di Google a schermo
                     st.error(f"Il server di Google ha bloccato {m_name} per questo motivo: {str(e)}")
                     continue
